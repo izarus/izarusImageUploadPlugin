@@ -2,6 +2,29 @@
 
 class izarusValidatorFileImage extends sfValidatorFile {
 
+/**
+ * Configures the validator
+ *
+ * Available options:
+ *
+ *    max_height      Maximum height for the uploaded image
+ *    max_width       Maximum width for the uploaded image
+ *    max_width       Minimum width for the uploaded image
+ *    max_height      Minimum height for the uploaded image
+ *    ratio           Specific ratio requirement for the image. May be an array (width,height) ratio or 'square'
+ *    thumbnails      Associative array of desired thumbnails for the image.
+ *                    array(
+ *                      width => (integer),
+ *                      height => (integet),
+ *                      mime => (string),       <<< 'image/jpeg',image/pjpeg' (default) ,'image/png','image/gif'
+ *                      quality => (integer)    <<< 0-100 for image/jpeg (80 default)
+ *                    )
+ *
+ *
+ *
+ * @param  array  $options  Options for validator
+ * @param  array  $messages Messages for validations
+ */
   protected function configure($options = array(), $messages = array())
   {
     $this->addOption('max_height',null);
@@ -20,7 +43,7 @@ class izarusValidatorFileImage extends sfValidatorFile {
     $this->addMessage('invalid_image', '%value% is an incorrect image file.');
 
     if(isset($options['ratio']) && is_array($options['ratio'])){
-       $this->addMessage('not_ratio', 'The image must be the correct dimensions ('.$options['ratio'][0].' x '.$options['ratio'][1].')');
+      $this->addMessage('not_ratio', 'The image must be the correct dimensions ('.$options['ratio'][0].' x '.$options['ratio'][1].')');
     }
 
     parent::configure($options, $messages);

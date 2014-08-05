@@ -94,9 +94,13 @@ class izarusThumbnailsValidatedFile extends sfValidatedFile
     $this->savedName = $file;
 
     foreach ($this->thumbnails as $name => $t) {
-      $thumb = new sfThumbnail($t['width'], $t['height'], false, true, $t['quality']);
+      $mime = (isset($t['mime']))? $t['mime']:'image/jpeg';
+      $option = (isset($t['option']))? $t['option']:'crop';
+      $quality = (isset($t['quality']))? $t['quality']:80;
+
+      $thumb = new izarusThumbnail($t['width'], $t['height'],$option);
       $thumb->loadFile($this->getTempName());
-      $thumb->save($this->path.DIRECTORY_SEPARATOR.$name.'_'.$base_filename,'image/jpeg');
+      $thumb->save($this->path.DIRECTORY_SEPARATOR.$name.'_'.$base_filename,$mime,$quality);
       chmod($this->path.DIRECTORY_SEPARATOR.$name.'_'.$base_filename, $fileMode);
     }
 
