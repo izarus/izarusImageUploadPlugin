@@ -18,6 +18,7 @@ class izarusValidatorFileImage extends sfValidatorFile {
  *                      height => (integet),
  *                      mime => (string),       <<< 'image/jpeg',image/pjpeg' (default) ,'image/png','image/gif'
  *                      quality => (integer)    <<< 0-100 for image/jpeg (80 default)
+ *                      option => (string)       <<< 'exact','auto','portrait','landscape','crop'
  *                    )
  *
  *
