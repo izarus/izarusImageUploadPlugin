@@ -90,13 +90,24 @@ class izarusThumbnail
    */
   public function loadFile($source)
   {
+    // echo "<hr><pre>Files: ";
+    // var_dump($filename);
+    // echo "</pre>";
+
+    // echo "<hr><pre>SOURCE: ";
+    // var_dump($source);
+    // echo "</pre>";
+    // die(' izarusThumbnail.class');
     if (!is_readable($source))
     {
       throw new Exception(sprintf('The file "%s" is not readable.', $source));
     }
 
     $imgData = @GetImageSize($source);
-
+    // echo "<hr><pre>IMGDATA: ";
+    // var_dump($imgData);
+    // echo "</pre>";
+    // die(' izarusThumbnail.class');
     if (!$imgData)
     {
       throw new Exception(sprintf('Could not load image %s', $source));
@@ -104,7 +115,9 @@ class izarusThumbnail
 
     if (in_array($imgData['mime'], $this->imgTypes))
     {
+
       $loader = $this->imgLoaders[$imgData['mime']];
+
       if(!function_exists($loader))
       {
         throw new Exception(sprintf('Function %s not available. Please enable the GD extension.', $loader));
@@ -114,6 +127,14 @@ class izarusThumbnail
       $this->sourceWidth = $imgData[0];
       $this->sourceHeight = $imgData[1];
       $this->sourceMime = $imgData['mime'];
+
+      // echo "<hr><pre> LOADER: ";
+      // var_dump($this->source);
+      // var_dump($this->sourceWidth);
+      // var_dump($this->sourceHeight);
+      // var_dump($this->sourceMime);
+      // echo "</pre>";
+      // die(' izarusThumbnail.class');
 
       switch ($this->option)
       {
@@ -169,6 +190,81 @@ class izarusThumbnail
           $this->sourceX = ($optimalWidth - $this->thumbnailWidth) / 2;
           $this->sourceY = ($optimalHeight - $this->thumbnailHeight) / 2;
 
+          break;
+
+        case 'fill':
+
+          $white = imagecreatetruecolor($this->sourceWidth, $this->sourceHeight);
+          // Fill the new image with white background
+          $bg = imagecolorallocate($white, 255, 255, 255);
+          imagefill($white, 0, 0, $bg);
+          imagecopy($white, $this->source, 0, 0, 0, 0, $this->sourceWidth, $this->sourceHeight);
+
+          $filename = $white;
+
+          $ancho = imagesx($filename);
+          $alto = imagesy($filename);
+
+          $Nancho=$this->thumbnailWidth;
+          $Nalto=$this->thumbnailHeight;
+
+          $p=min($ancho,$alto);
+          $q=max($ancho,$alto);
+
+          $redim_ancho = $Nancho;
+          $redim_alto = $Nalto;
+          $redim_x = 0;
+          $redim_y = 0;
+
+          $thumb = imagecreatetruecolor($Nancho,$Nalto);
+          $color = imagecolorallocate($thumb, 255, 255, 255);
+          imagefill($thumb, 0, 0, $color);
+
+          if($this->thumbnailWidth == $this->thumbnailHeight){
+            if($ancho > $alto){
+              $redim_ancho = $ancho * ($redim_alto / $alto);
+              $redim_alto = $Nalto;
+
+              $redim_x = ($Nancho - $redim_ancho) / 2;
+              if($redim_x<0) $redim_x = -1 * $redim_x;
+            }else{
+              $redim_ancho = $Nancho;
+              $redim_alto = $alto * ($redim_ancho / $ancho);
+
+              $redim_y = ($Nalto - $redim_alto) / 2;
+              if($redim_y<0) $redim_y = -1 * $redim_y;
+            }
+
+            $resized = imagecreatetruecolor($redim_ancho,$redim_alto);
+
+            //imagecopyresampled($thumb,$filename,0,0,$x,$y,$Nancho,$Nalto,$q,$q);
+            imagecopyresampled($resized,$filename,0,0,0,0,$Nancho,$Nalto,$q,$q);
+            imagecopy($thumb,$resized,$redim_x,$redim_y,0,0,$redim_ancho,$redim_alto);
+          }else{
+
+            if($alto>=$ancho){
+
+              $a=($w*$alto)/$ancho;
+              $b=($h*$alto)/$a;
+
+              if($b>$alto){
+                $r=$alto/$b;
+                $ancho=$ancho*$r;
+                $b=$alto;
+              }else{
+                $y=($alto-$b)/2;
+              }
+
+              imagecopyresampled($thumb,$filename,0,0,$this->thumbnailWidth,$this->thumbnailHeight,$Nancho,$Nalto,$ancho,$b);
+            }else{
+              $a=($this->thumbnailHeight*$ancho)/$alto;
+              $b=($this->thumbnailWidth*$ancho)/$a;
+
+              imagecopyresampled($thumb,$filename,0,0,$this->thumbnailWidth,$this->thumbnailHeight,$Nancho,$Nalto,$b,$alto);
+            }
+
+          }
+          $thumb = $this->imagetranstowhite($thumb);
           break;
       }
 
@@ -256,6 +352,34 @@ class izarusThumbnail
   public function __destruct()
   {
     $this->freeAll();
+  }
+
+  /**
+ * [imagetranstowhite description]
+ * @param  [type] $trans [description]
+ * @return [type]        [description]
+ */
+  function imagetranstowhite($trans) {
+    // Create a new true color image with the same size
+    $w = imagesx($trans);
+    $h = imagesy($trans);
+    $white = imagecreatetruecolor($w, $h);
+
+    // Fill the new image with white background
+    $bg = imagecolorallocate($white, 255, 255, 255);
+    imagefill($white, 0, 0, $bg);
+
+    // Copy original transparent image onto the new image
+    imagecopy($white, $trans, 0, 0, 0, 0, $w, $h);
+    return $white;
+  }
+
+  function ext($fichero) {
+    $fichero = strtolower($fichero) ;
+    $extension = explode(".", $fichero) ;
+    $n = count($extension)-1;
+    $extension = $extension[$n];
+    return $extension;
   }
 
 }
