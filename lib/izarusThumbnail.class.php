@@ -119,6 +119,15 @@ class izarusThumbnail
       $this->sourceMime = $imgData['mime'];
 
       $this->thumb = imagecreatetruecolor($this->thumbnailWidth, $this->thumbnailHeight);
+      if ($this->sourceMime == 'image/png') {
+        imagealphablending($this->thumb,false);
+        imagesavealpha($this->thumb,true);
+        $transparent = imagecolorallocatealpha($this->thumb, 255, 255, 255, 127);
+        imagefilledrectangle($this->thumb, 0, 0, $this->thumbnailWidth, $this->thumbnailHeight, $transparent);
+      } else {
+        $color = imagecolorallocate($this->thumb, 255, 255, 255);
+        imagefill($this->thumb, 0, 0, $color);
+      }
 
       switch ($this->option)
       {
@@ -166,6 +175,12 @@ class izarusThumbnail
           }
 
           $imageResized = imagecreatetruecolor($optimalWidth , $optimalHeight);
+          if ($this->sourceMime == 'image/png') {
+            imagealphablending($imageResized,false);
+            imagesavealpha($imageResized,true);
+            $transparent = imagecolorallocatealpha($imageResized, 255, 255, 255, 127);
+            imagefilledrectangle($imageResized, 0, 0, $this->thumbnailWidth, $this->thumbnailHeight, $transparent);
+          }
           imagecopyresampled($imageResized, $this->source, 0, 0, 0, 0, $optimalWidth, $optimalHeight , $this->sourceWidth, $this->sourceHeight);
 
           $this->source = $imageResized;
@@ -177,15 +192,6 @@ class izarusThumbnail
           break;
 
         case 'fill':
-
-          if ($this->sourceMime == 'image/png') {
-            $color = imagecolorallocatealpha($this->thumb, 0, 0, 0, 127);
-            imagefill($this->thumb, 0, 0, $color);
-            imagesavealpha($this->thumb, TRUE);
-          } else {
-            $color = imagecolorallocate($this->thumb, 255, 255, 255);
-            imagefill($this->thumb, 0, 0, $color);
-          }
 
           if($this->thumbnailWidth == $this->thumbnailHeight) {
             // SQUARE THUMB
@@ -230,11 +236,15 @@ class izarusThumbnail
           }
 
           $resized = imagecreatetruecolor($new_width,$new_height);
+          if ($this->sourceMime == 'image/png') {
+            imagealphablending($resized,false);
+            imagesavealpha($resized,true);
+            $transparent = imagecolorallocatealpha($resized, 255, 255, 255, 127);
+            imagefilledrectangle($resized, 0, 0, $this->thumbnailWidth, $this->thumbnailHeight, $transparent);
+          }
           imagecopyresampled($resized,$this->source,0,0,0,0,$new_width,$new_height,$this->sourceWidth,$this->sourceHeight);
           break;
       }
-
-
 
       if ($this->option == 'crop'){
         imagecopy($this->thumb, $this->source, 0, 0, $this->sourceX, $this->sourceY, $this->thumbnailWidth, $this->thumbnailHeight);
