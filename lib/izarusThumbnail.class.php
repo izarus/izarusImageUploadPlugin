@@ -71,6 +71,7 @@ class izarusThumbnail
    *    portrait    Keep the height given and auto adjust width.
    *    landscape   Keep the width given for the thumbnail and auto adjust height.
    *    crop        Generates a thumbnail of exact width and height, keeping proportions and cropping extra areas to fit.
+   *    fill        Generates a thumbnail of exact width and height, keeping proportions and filling with transparency/white extra areas to fit.
    *
    * @param integer $thumbnailWidth  Thumbnail max width
    * @param integer $thumbnailHeight Thumbnail max height
@@ -90,24 +91,13 @@ class izarusThumbnail
    */
   public function loadFile($source)
   {
-    // echo "<hr><pre>Files: ";
-    // var_dump($filename);
-    // echo "</pre>";
-
-    // echo "<hr><pre>SOURCE: ";
-    // var_dump($source);
-    // echo "</pre>";
-    // die(' izarusThumbnail.class');
     if (!is_readable($source))
     {
       throw new Exception(sprintf('The file "%s" is not readable.', $source));
     }
 
     $imgData = @GetImageSize($source);
-    // echo "<hr><pre>IMGDATA: ";
-    // var_dump($imgData);
-    // echo "</pre>";
-    // die(' izarusThumbnail.class');
+
     if (!$imgData)
     {
       throw new Exception(sprintf('Could not load image %s', $source));
@@ -128,13 +118,7 @@ class izarusThumbnail
       $this->sourceHeight = $imgData[1];
       $this->sourceMime = $imgData['mime'];
 
-      // echo "<hr><pre> LOADER: ";
-      // var_dump($this->source);
-      // var_dump($this->sourceWidth);
-      // var_dump($this->sourceHeight);
-      // var_dump($this->sourceMime);
-      // echo "</pre>";
-      // die(' izarusThumbnail.class');
+      $this->thumb = imagecreatetruecolor($this->thumbnailWidth, $this->thumbnailHeight);
 
       switch ($this->option)
       {
@@ -194,84 +178,68 @@ class izarusThumbnail
 
         case 'fill':
 
-          $white = imagecreatetruecolor($this->sourceWidth, $this->sourceHeight);
-          // Fill the new image with white background
-          $bg = imagecolorallocate($white, 255, 255, 255);
-          imagefill($white, 0, 0, $bg);
-          imagecopy($white, $this->source, 0, 0, 0, 0, $this->sourceWidth, $this->sourceHeight);
+          if ($this->sourceMime == 'image/png') {
+            $color = imagecolorallocatealpha($this->thumb, 0, 0, 0, 127);
+            imagefill($this->thumb, 0, 0, $color);
+            imagesavealpha($this->thumb, TRUE);
+          } else {
+            $color = imagecolorallocate($this->thumb, 255, 255, 255);
+            imagefill($this->thumb, 0, 0, $color);
+          }
 
-          $filename = $white;
-
-          $ancho = imagesx($filename);
-          $alto = imagesy($filename);
-
-          $Nancho=$this->thumbnailWidth;
-          $Nalto=$this->thumbnailHeight;
-
-          $p=min($ancho,$alto);
-          $q=max($ancho,$alto);
-
-          $redim_ancho = $Nancho;
-          $redim_alto = $Nalto;
-          $redim_x = 0;
-          $redim_y = 0;
-
-          $thumb = imagecreatetruecolor($Nancho,$Nalto);
-          $color = imagecolorallocate($thumb, 255, 255, 255);
-          imagefill($thumb, 0, 0, $color);
-
-          if($this->thumbnailWidth == $this->thumbnailHeight){
-            if($ancho > $alto){
-              $redim_ancho = $ancho * ($redim_alto / $alto);
-              $redim_alto = $Nalto;
-
-              $redim_x = ($Nancho - $redim_ancho) / 2;
-              if($redim_x<0) $redim_x = -1 * $redim_x;
-            }else{
-              $redim_ancho = $Nancho;
-              $redim_alto = $alto * ($redim_ancho / $ancho);
-
-              $redim_y = ($Nalto - $redim_alto) / 2;
-              if($redim_y<0) $redim_y = -1 * $redim_y;
+          if($this->thumbnailWidth == $this->thumbnailHeight) {
+            // SQUARE THUMB
+            if($this->sourceWidth > $this->sourceHeight){
+              // LANDSCAPE SOURCE
+              $new_width = $this->thumbnailWidth;
+              $new_height = $this->sourceHeight * $this->thumbnailWidth / $this->sourceWidth;
+              $pos_x = 0;
+              $pos_y = floor( ($this->thumbnailHeight-$new_height) / 2 );
+            }elseif($this->sourceWidth < $this->sourceHeight){
+              // PORTRAIT SOURCE
+              $new_width = $this->sourceWidth * $this->thumbnailHeight / $this->sourceHeight;
+              $new_height = $this->thumbnailHeight;
+              $pos_x = floor( ($this->thumbnailWidth-$new_width) / 2 );
+              $pos_y = 0;
+            } else {
+              // SQUARE SOURCE
+              $new_width = $this->thumbnailWidth;
+              $new_height = $this->thumbnailHeight;
+              $pos_x = 0;
+              $pos_y = 0;
             }
 
-            $resized = imagecreatetruecolor($redim_ancho,$redim_alto);
+          } else {
+            // NON SQUARE THUMB
 
-            //imagecopyresampled($thumb,$filename,0,0,$x,$y,$Nancho,$Nalto,$q,$q);
-            imagecopyresampled($resized,$filename,0,0,0,0,$Nancho,$Nalto,$q,$q);
-            imagecopy($thumb,$resized,$redim_x,$redim_y,0,0,$redim_ancho,$redim_alto);
-          }else{
+            $ratio_source = $this->sourceWidth/$this->sourceHeight;
+            $ratio_thumb = $this->thumbnailWidth/$this->thumbnailHeight;
 
-            if($alto>=$ancho){
-
-              $a=($w*$alto)/$ancho;
-              $b=($h*$alto)/$a;
-
-              if($b>$alto){
-                $r=$alto/$b;
-                $ancho=$ancho*$r;
-                $b=$alto;
-              }else{
-                $y=($alto-$b)/2;
-              }
-
-              imagecopyresampled($thumb,$filename,0,0,$this->thumbnailWidth,$this->thumbnailHeight,$Nancho,$Nalto,$ancho,$b);
-            }else{
-              $a=($this->thumbnailHeight*$ancho)/$alto;
-              $b=($this->thumbnailWidth*$ancho)/$a;
-
-              imagecopyresampled($thumb,$filename,0,0,$this->thumbnailWidth,$this->thumbnailHeight,$Nancho,$Nalto,$b,$alto);
+            if ($ratio_source >= $ratio_thumb) {
+              $new_width = $this->thumbnailWidth;
+              $new_height = $this->sourceHeight * $this->thumbnailWidth / $this->sourceWidth;
+              $pos_x = 0;
+              $pos_y = floor( ($this->thumbnailHeight-$new_height) / 2 );
+            } else {
+              $new_width = $this->sourceWidth * $this->thumbnailHeight / $this->sourceHeight;
+              $new_height = $this->thumbnailHeight;
+              $pos_x = floor( ($this->thumbnailWidth-$new_width) / 2 );
+              $pos_y = 0;
             }
 
           }
-          $thumb = $this->imagetranstowhite($thumb);
+
+          $resized = imagecreatetruecolor($new_width,$new_height);
+          imagecopyresampled($resized,$this->source,0,0,0,0,$new_width,$new_height,$this->sourceWidth,$this->sourceHeight);
           break;
       }
 
-      $this->thumb = imagecreatetruecolor($this->thumbnailWidth, $this->thumbnailHeight);
+
 
       if ($this->option == 'crop'){
         imagecopy($this->thumb, $this->source, 0, 0, $this->sourceX, $this->sourceY, $this->thumbnailWidth, $this->thumbnailHeight);
+      } elseif($this->option == 'fill') {
+        imagecopy($this->thumb,$resized,$pos_x,$pos_y,0,0,$new_width,$new_height);
       } else {
         imagecopyresampled($this->thumb, $this->source, $this->thumbnailX, $this->thumbnailY, $this->sourceX, $this->sourceY, $this->thumbnailWidth, $this->thumbnailHeight, $this->sourceWidth, $this->sourceHeight);
       }
@@ -352,34 +320,6 @@ class izarusThumbnail
   public function __destruct()
   {
     $this->freeAll();
-  }
-
-  /**
- * [imagetranstowhite description]
- * @param  [type] $trans [description]
- * @return [type]        [description]
- */
-  function imagetranstowhite($trans) {
-    // Create a new true color image with the same size
-    $w = imagesx($trans);
-    $h = imagesy($trans);
-    $white = imagecreatetruecolor($w, $h);
-
-    // Fill the new image with white background
-    $bg = imagecolorallocate($white, 255, 255, 255);
-    imagefill($white, 0, 0, $bg);
-
-    // Copy original transparent image onto the new image
-    imagecopy($white, $trans, 0, 0, 0, 0, $w, $h);
-    return $white;
-  }
-
-  function ext($fichero) {
-    $fichero = strtolower($fichero) ;
-    $extension = explode(".", $fichero) ;
-    $n = count($extension)-1;
-    $extension = $extension[$n];
-    return $extension;
   }
 
 }

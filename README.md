@@ -4,7 +4,7 @@ izarusImageUploadPlugin
 Plugin Symfony 1.4 para subir imágenes mediante los formularios y generar miniaturas automáticamente.
 
 #### Version
-* 0.2
+* 0.3
 
 #### Requiere
 * PHP GD
@@ -35,12 +35,14 @@ Un ejemplo de uso del validador para subir una imagen y crear un par de thumbnai
           'width' => 400,
           'height' => 400,
           'mime' => 'image/jpeg',
+          'option' => 'crop',
           'quality' => 100,
         ),
         'footer-thumb' => array(
           'width' => 50,
           'height' => 50,
           'mime' => 'image/png',
+          'option' => 'fill',
         )),
       ),array(
         'min_width' => 'La imagen debe ser cuadrada de al menos 180 pixeles de ancho.',
@@ -51,4 +53,17 @@ Un ejemplo de uso del validador para subir una imagen y crear un par de thumbnai
       ));
 ```
 
+Options available:
 
+exact: Creates a thumnail of exact width and height, not keeping proportions.
+auto: (default) Class decides to keep the width and adjust the height or keep the height and adjust the width, or keep a square.
+portrait: Keep the height given and auto adjust width.
+landscape: Keep the width given for the thumbnail and auto adjust height.
+crop: Generates a thumbnail of exact width and height, keeping proportions and cropping extra areas to fit.
+fill: Generates a thumbnail of exact width and height, keeping proportions and filling with transparency/white extra areas to fit. If mime is 'image/png', it fills with transparent color, else, fills with white color.
+
+## Changelog
+
+0.3 Fill option
+0.2 Only GD, Crop option
+0.1 Create thumbnails
